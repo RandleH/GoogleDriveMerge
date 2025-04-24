@@ -25,6 +25,7 @@ def exe(cmd):
 def validify(name):
     return name.replace(" ", r"\ ").replace("(", r"\(").replace(")", r"\)")
 
+
 class MergeUtility:
     def __init__(self, args):
         self.logger = PrettyLogger(self.__class__.__name__, level=logging.DEBUG if args.logging=="debug" else logging.INFO)
@@ -35,6 +36,9 @@ class MergeUtility:
         self.itemlist = list(unknown_args)
         self.logger.info(f"ItemList:")
         for item in self.itemlist:
+            if "comappleCloudDocs" in item:
+                item = item.replace("comappleCloudDocs", "com~apple~CloudDocs")
+
             self.logger.info(f"\t{item}")
         
         self.file_operation = "cp" if args.copy==True else "mv"
@@ -74,7 +78,6 @@ class MergeUtility:
                 self.logger.debug(f"{trace_prefix} ${cmd} Returned:{exe(cmd)}")
             else:
                 self.submerge( src_dir, dst_dir, trace_level+1)
-        pass
 
 
 if __name__=="__main__":
