@@ -35,11 +35,13 @@ class MergeUtility:
         self.logger.debug(f"SysArgs: \n\t\t{sys.argv}")
         self.itemlist = list(unknown_args)
         self.logger.info(f"ItemList:")
-        for item in self.itemlist:
+        for idx, item in enumerate(self.itemlist):
             if "comappleCloudDocs" in item:
-                item = item.replace("comappleCloudDocs", "com~apple~CloudDocs")
+                self.itemlist[idx] = item.replace("comappleCloudDocs", "com~apple~CloudDocs")
+            self.logger.info(f"\t{self.itemlist[idx]}")
+        if "comappleCloudDocs" in self.args.dst:
+            self.args.dst = self.args.dst.replace("comappleCloudDocs", "com~apple~CloudDocs")
 
-            self.logger.info(f"\t{item}")
         
         self.file_operation = "cp" if args.copy==True else "mv"
         self.dir_operation  = "cp -rf "if args.copy==True else "mv"
@@ -77,4 +79,12 @@ class MergeUtility:
                 cmd = f"{self.dir_operation} {validify(src_dir)} {validify(dst_dir)}"
                 self.logger.debug(f"{trace_prefix} ${cmd} Returned:{exe(cmd)}")
             else:
-          
+                self.submerge( src_dir, dst_dir, trace_level+1)
+
+
+if __name__=="__main__":
+    m = MergeUtility(args)
+    m.merge()
+
+
+
