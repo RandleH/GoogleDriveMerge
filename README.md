@@ -2,7 +2,7 @@
 
 
 
-## Do you know...
+## Did you know...
 
 Google drive automatically compress your files in a batch while you are downloading a folder from the server. However this may cause the problem leaving you a stack of files in pieces. 
 
