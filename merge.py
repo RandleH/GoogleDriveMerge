@@ -77,12 +77,4 @@ class MergeUtility:
                 cmd = f"{self.dir_operation} {validify(src_dir)} {validify(dst_dir)}"
                 self.logger.debug(f"{trace_prefix} ${cmd} Returned:{exe(cmd)}")
             else:
-                self.submerge( src_dir, dst_dir, trace_level+1)
-
-
-if __name__=="__main__":
-    m = MergeUtility(args)
-    m.merge()
-
-
-
+          
