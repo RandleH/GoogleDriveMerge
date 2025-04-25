@@ -49,7 +49,7 @@ For demonstration, inside this repository, I provided some dummy files in the `e
 
 The directory tree looks like this:
 
-<img src="/Users/randleh/Library/Mobile Documents/com~apple~CloudDocs/GitHub/GoogleDriveMerge/asset/2.png" alt="3" style="zoom:30%;" />
+<img src="asset/2.png" alt="3" style="zoom:30%;" />
 
 Then you may run this command
 
@@ -65,7 +65,7 @@ python merge.py --dst dummy --copy 0 example/dummy1 example/dummy2 example/dummy
 
 Finally, the result directory tree will be like this:
 
-<img src="/Users/randleh/Library/Mobile Documents/com~apple~CloudDocs/GitHub/GoogleDriveMerge/asset/3.png" alt="3" style="zoom:30%;" />
+<img src="asset/3.png" alt="3" style="zoom:30%;" />
 
 On the leftside, every original folders became empty and the rightride is your ordered google drive content.
 
