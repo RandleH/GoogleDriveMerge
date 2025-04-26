@@ -3,6 +3,7 @@ import os
 import argparse
 import logging
 import sys
+import tarfile
 from logger import PrettyLogger
 
 
@@ -15,8 +16,10 @@ parser.add_argument("--copy", type=bool, help="Copying files instead of moving",
 
 
 DEFAULT_IGNORED_FILE = {
-    ".DS_Store"
+    ".DS_Store",
+    ".git"
 }
+
 
 def exe(cmd):
     return os.system(cmd)
@@ -24,6 +27,23 @@ def exe(cmd):
 
 def validify(name):
     return name.replace(" ", r"\ ").replace("(", r"\(").replace(")", r"\)")
+
+def is_zip(file):
+    try:
+        with open(file, 'rb') as f:
+            pass
+        ext = [s.lower() for s in os.path.splitext(file)]
+        if ext[1]==".zip" or ext[1]==".tar" or ext[1]==".rar":
+            return True
+        else:
+            return False
+    except FileNotFoundError as e:
+        return e
+    except IsADirectoryError:
+        return False
+    except Exception as e:
+        return e
+    
 
 
 class MergeUtility:
@@ -42,10 +62,6 @@ class MergeUtility:
         if "comappleCloudDocs" in self.args.dst:
             self.args.dst = self.args.dst.replace("comappleCloudDocs", "com~apple~CloudDocs")
 
-        
-        self.file_operation = "cp" if args.copy==True else "mv"
-        self.dir_operation  = "cp -rf "if args.copy==True else "mv"
-
     def merge(self):
         if not os.path.exists(self.args.dst):
             cmd = f"mkdir {validify(self.args.dst)}"
@@ -53,6 +69,27 @@ class MergeUtility:
         
         for idx, item in enumerate(self.itemlist):
             self.submerge( item, self.args.dst)
+
+    def __cmd_merge__(self, _from:str, _to:str, _is_dir:bool) -> str:
+        cmd = ""
+        _is_zip = is_zip(_from)
+
+        if self.args.copy==True:
+            if _is_zip==True:
+                cmd += "tar -zxvf "
+            else:
+                cmd += "cp -rf " if _is_dir==True else "cp "
+        else:
+            if _is_zip==True:
+                cmd += "tar -zxvf "
+            else:
+                cmd += "mv "
+            pass
+        cmd += validify(_from)
+        cmd += " "
+        cmd += validify(_to)
+
+        return cmd
 
 
     def submerge(self, src, dst, trace_level=0):
@@ -69,14 +106,16 @@ class MergeUtility:
                 self.logger.warning(f"Can NOT merge duplicated file: {os.path.join(src,f)}")
                 continue
 
-            cmd = f"{self.file_operation} {validify(src_file)} {validify(dst)}"
+            cmd = self.__cmd_merge__(src_file, dst, False)
             self.logger.debug(f"{trace_prefix} ${cmd} Returned:{exe(cmd)}")
 
         for d in dir_list:
             src_dir = os.path.join(src,d)
             dst_dir = os.path.join(dst,d)
+            if d in DEFAULT_IGNORED_FILE:
+                continue
             if not os.path.exists(dst_dir):
-                cmd = f"{self.dir_operation} {validify(src_dir)} {validify(dst_dir)}"
+                cmd = self.__cmd_merge__(src_dir, dst_dir, True)
                 self.logger.debug(f"{trace_prefix} ${cmd} Returned:{exe(cmd)}")
             else:
                 self.submerge( src_dir, dst_dir, trace_level+1)
