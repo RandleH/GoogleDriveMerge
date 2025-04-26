@@ -4,7 +4,7 @@
 
 ## Did you know...
 
-Google drive automatically compress your files in a batch while you are downloading a folder from the server. However this may cause the problem leaving you a stack of files in pieces. 
+Google drive automatically zips your files in a batch while you are downloading a folder from the server because it has a stupid 2GB rule. However this may cause the problem leaving you a stack of files in pieces. 
 
 <p align="center"><img src="asset/1.jpg" alt="rdme_clk_panel" ;" /></p>
 
@@ -72,4 +72,6 @@ On the leftside, every original folders became empty and the rightride is your o
 
 
 
+
+## Give me a 🌟 if you like!
 
