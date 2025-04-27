@@ -52,7 +52,7 @@ python merge.py --dst <your_destination_folder> [--logging <debug|[info]>] [--no
 | Command     | Role      | Args                 | Description                                                  |
 | ----------- | --------- | -------------------- | ------------------------------------------------------------ |
 | `--dst`     | Operation | `$path`              | The destination path you want to save                        |
-| `--logging` | Option    | `debug`|**`info`** | More verbose if set to `debug` |
+| `--logging` | Option    | `debug`/**`info`** | More verbose if set to `debug` |
 | `--no-keep` | Option    |                      | Do not keep the original source files. <br />If set, you will be queried to remove original files or not once done |
 | `--force`   | Option    |                      | Any query[Y/N] will be treated as a YES answer               |
 
