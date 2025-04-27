@@ -1,12 +1,18 @@
 
 
 
-python3 merge.py --dst "<your_destination_path>" \
+python3 merge.py --dst "2023-02_CGSA集体照" \
 --logging debug \
 --no-keep \
 --force \
-"<your_source_file>" \
-"<your_source_file>" \
-"<your_source_file>" \
-"<your_source_file>" \
-"<your_source_file>" \
+"2023-02_CGSA集体照-20250427T193551Z-001.zip" \
+"2023-02_CGSA集体照-20250427T193551Z-002.zip" \
+"2023-02_CGSA集体照-20250427T193551Z-003.zip" \
+"2023-02_CGSA集体照-20250427T193551Z-004.zip" \
+"2023-02_CGSA集体照-20250427T193551Z-005.zip" \
+"2023-02_CGSA集体照-20250427T193551Z-006.zip" \
+"2023-02_CGSA集体照-20250427T193551Z-007.zip" \
+"2023-02_CGSA集体照-20250427T193551Z-008.zip" \
+"2023-02_CGSA集体照-20250427T193551Z-009.zip" \
+"2023-02_CGSA集体照-20250427T193551Z-010.zip" \
+"2023-02_CGSA集体照-20250427T193551Z-011.zip" \

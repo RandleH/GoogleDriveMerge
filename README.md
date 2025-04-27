@@ -4,7 +4,7 @@
 
 ## Did you know...
 
-Google drive automatically zips your files in a batch while you are downloading a folder from the server because it has a stupid 2GB rule. However this may cause the problem leaving you a stack of files in pieces. 
+Google drive automatically zips your files in a batch while you are downloading a folder from the server because it has this 2GB rule. However this may cause the problem leaving you a stack of files in pieces. 
 
 <p align="center"><img src="asset/1.jpg" alt="rdme_clk_panel" ;" /></p>
 
@@ -35,15 +35,54 @@ python merge.py --dst <your_destination_folder> <source_folder1> <source_folder2
 
 
 
-Below is the full command usage:
+
+
+## How to use (detailed)
+
+
+
+### Command Usage
 
 ```bash
-python merge.py --dst <your_destination_folder> --logging <debug|[info]> --copy <[0]|1> <source_folder1> <source_folder2> ...
+python merge.py --dst <your_destination_folder> [--logging <debug|[info]>] [--no-keep] [--force] <source_folder1> <source_folder2> ...
 ```
 
 
 
-## Example
+### Option `--logging`
+
+```bash
+python merge.py --logging debug ... # More verbose
+python merge.py --logging info ...  # Default
+```
+
+
+
+### Option `--no-keep`
+
+```bash
+python merge.py --no-keep ... # Do not keep the original source files
+```
+
+> We still ask you if you really need to remove the origin or not unless you set the `--force` flag.
+
+
+
+### Option `--force`
+
+```bash
+python merge.py --force ... # Any query[Y/N] will be treated as a YES answer
+```
+
+
+
+Any flag that was NOT mentioned above is a required one. User MUST provide at least one.
+
+
+
+
+
+## Behind the secrets
 
 For demonstration, inside this repository, I provided some dummy files in the `example` folder.
 
@@ -73,5 +112,7 @@ On the leftside, every original folders became empty and the rightride is your o
 
 
 
-## Give me a 🌟 if you like!
+## Give it a 🌟 if you like!
+
+
 
