@@ -4,14 +4,18 @@ import argparse
 import logging
 import sys
 import tarfile
+import zipfile
 from logger import PrettyLogger
 
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dst", type=str, help="Instagram Account Name", default="")
-parser.add_argument("--logging", type=str, help="Print More Message", default="info")
-parser.add_argument("--copy", type=bool, help="Copying files instead of moving", default=False)
+parser.add_argument("--dst", type=str, help="Destination Files", default="")
+parser.add_argument("--logging", type=str, help="Verbose", default="info")
+parser.add_argument(      "--no-keep", action="store_true", dest="no_keep", default=False, help="Do NOT keep any source files!! (Danger!!)")
+parser.add_argument("-f", "--force",   action="store_true", dest="force", default=False, help="Skip the query!! (Danger!!)")
+
+
 ( args, unknown_args) = parser.parse_known_args()
 
 
@@ -21,19 +25,15 @@ DEFAULT_IGNORED_FILE = {
 }
 
 
-def exe(cmd):
-    return os.system(cmd)
-    # return 0
-
 def validify(name):
-    return name.replace(" ", r"\ ").replace("(", r"\(").replace(")", r"\)")
+    return name.replace(r"\\ ", " ").replace(r"\ ", " ").replace(" ", r"\ ").replace("(", r"\(").replace(")", r"\)")
 
 def is_zip(file):
     try:
         with open(file, 'rb') as f:
             pass
         ext = [s.lower() for s in os.path.splitext(file)]
-        if ext[1]==".zip" or ext[1]==".tar" or ext[1]==".rar":
+        if ext[1]==".zip":
             return True
         else:
             return False
@@ -43,7 +43,14 @@ def is_zip(file):
         return False
     except Exception as e:
         return e
-    
+
+def query(msg):
+    ans = input(f"{msg} [Y/N]? ")
+    if ans=="Y":
+        return True
+    else:
+        return False
+
 
 
 class MergeUtility:
@@ -62,37 +69,37 @@ class MergeUtility:
         if "comappleCloudDocs" in self.args.dst:
             self.args.dst = self.args.dst.replace("comappleCloudDocs", "com~apple~CloudDocs")
 
+    def __exe__(self, cmd):
+        self.logger.debug(f"${cmd} | Return: {os.system(cmd)}")
+        # self.logger.debug(f"${cmd} | Return: {0xFF}")
+
     def merge(self):
-        if not os.path.exists(self.args.dst):
+        def __make_cmd_mkdir__(dir):
             cmd = f"mkdir {validify(self.args.dst)}"
-            self.logger.debug(f"=> ${cmd} Returned:{exe(cmd)}")
+            return cmd
         
-        for idx, item in enumerate(self.itemlist):
-            self.submerge( item, self.args.dst)
-
-    def __cmd_merge__(self, _from:str, _to:str, _is_dir:bool) -> str:
-        cmd = ""
-        _is_zip = is_zip(_from)
-
-        if self.args.copy==True:
-            if _is_zip==True:
-                cmd += "tar -zxvf "
+        if not os.path.exists(self.args.dst):
+            self.__exe__(__make_cmd_mkdir__(self.args.dst))
+        
+        for item in self.itemlist:
+            if is_zip(item):
+                self.submerge_from_zip(item, self.args.dst)
             else:
-                cmd += "cp -rf " if _is_dir==True else "cp "
-        else:
-            if _is_zip==True:
-                cmd += "tar -zxvf "
+                self.submerge( item, self.args.dst, self.args.no_keep==False)
+
+
+    def submerge(self, src, dst, copy:bool, trace_level=0):
+        def __make_cmd_merge__(_from:str, _to:str, _is_dir:bool) -> str:
+            cmd = ""
+            if copy==True:
+                cmd += "cp -RpP -a " if _is_dir==True else "cp -a"
             else:
                 cmd += "mv "
-            pass
-        cmd += validify(_from)
-        cmd += " "
-        cmd += validify(_to)
-
-        return cmd
-
-
-    def submerge(self, src, dst, trace_level=0):
+            cmd += validify(_from)
+            cmd += " "
+            cmd += validify(_to)
+            return cmd
+        
         file_list = [f for f in os.listdir(src) if os.path.isfile(os.path.join(src,f))]
         dir_list  = [d for d in os.listdir(src) if not os.path.isfile(os.path.join(src,d))]
         trace_prefix = "="*trace_level+"=>"
@@ -105,9 +112,7 @@ class MergeUtility:
             if os.path.exists(os.path.join(dst,f)):
                 self.logger.warning(f"Can NOT merge duplicated file: {os.path.join(src,f)}")
                 continue
-
-            cmd = self.__cmd_merge__(src_file, dst, False)
-            self.logger.debug(f"{trace_prefix} ${cmd} Returned:{exe(cmd)}")
+            self.__exe__(__make_cmd_merge__(src_file, dst, False))
 
         for d in dir_list:
             src_dir = os.path.join(src,d)
@@ -115,15 +120,60 @@ class MergeUtility:
             if d in DEFAULT_IGNORED_FILE:
                 continue
             if not os.path.exists(dst_dir):
-                cmd = self.__cmd_merge__(src_dir, dst_dir, True)
-                self.logger.debug(f"{trace_prefix} ${cmd} Returned:{exe(cmd)}")
+                self.__exe__(__make_cmd_merge__(src_dir, dst_dir, True))
             else:
-                self.submerge( src_dir, dst_dir, trace_level+1)
+                self.submerge( src_dir, dst_dir, copy, trace_level+1)
+    
+    def submerge_from_zip(self, zip_path, dst):
+        def __make_cmd_remove__(file):
+            cmd = f"rm -rf {validify(file)}"
+            return cmd
+        
+        def __make_cmd_extractzip__(zip_path, _to):
+            if not os.path.exists(_to):
+                cmd = f"mkdir {validify(_to)} && tar xzfC {validify(zip_path)} {validify(_to)}"
+            else:
+                cmd = f"tar xzfC {validify(zip_path)} {validify(_to)}"
+            return cmd
+
+        top_level = None
+
+        #########################################################################################
+        # TODO: 
+        #   Module <zipfile> doesn't perserve file info (eg: mdate/permission/cdate/...).
+        #
+        # NOTE: 
+        #   <os.system()> treated needs all space charactor with an escape indicator "\"
+        #   However <zipfile.ZipFile()> won't recognize the escape indicator "\" 
+        #########################################################################################
+        with zipfile.ZipFile(validify(zip_path).replace(r"\ ", " "), 'r') as zip_file:
+            # zip_file.extractall(dst) # BUG
+            top_level = {item.split('/')[0] for item in zip_file.namelist()}
+        
+        try:
+            self.__exe__(__make_cmd_extractzip__(zip_path, dst))
+            
+            if len(top_level)!=1:
+                self.logger.warning(f"Top level in zip file is NOT unique. {top_level=}")
+            
+            for item in top_level:
+                src_item = os.path.join(dst,item)
+                self.submerge( src_item, dst, False)
+                self.__exe__(__make_cmd_remove__(src_item))
+            
+            if self.args.no_keep == True:
+                if self.args.force == True or query(f"Remove the zip file {zip_path}?"):
+                    self.__exe__(__make_cmd_remove__(zip_path))
+            
+        except Exception as e:
+            self.logger.error(e)
+
+
+
+    def submerge_from_tar(self, src, dst):
+        raise NotImplementedError
 
 
 if __name__=="__main__":
     m = MergeUtility(args)
     m.merge()
-
-
-
