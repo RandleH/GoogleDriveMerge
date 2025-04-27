@@ -25,8 +25,8 @@ DEFAULT_IGNORED_FILE = {
 }
 
 
-def validify(name):
-    return name.replace(r"\\ ", " ").replace(r"\ ", " ").replace(" ", r"\ ").replace("(", r"\(").replace(")", r"\)")
+def validate(name):
+    return name.replace(r"\\ ", " ").replace(r"\ ", " ").replace(" ", r"\ ").replace("(", r"\(").replace(")", r"\)").replace("&",r"\&")
 
 def is_zip(file):
     try:
@@ -61,7 +61,7 @@ class MergeUtility:
         self.logger.debug(f"UnknownArgs: \n\t\t{unknown_args}")
         self.logger.debug(f"SysArgs: \n\t\t{sys.argv}")
         self.itemlist = list(unknown_args)
-        self.logger.info(f"ItemList:")
+        self.logger.info(f"Items in this batch:")
         for idx, item in enumerate(self.itemlist):
             if "comappleCloudDocs" in item:
                 self.itemlist[idx] = item.replace("comappleCloudDocs", "com~apple~CloudDocs")
@@ -75,13 +75,14 @@ class MergeUtility:
 
     def merge(self):
         def __make_cmd_mkdir__(dir):
-            cmd = f"mkdir {validify(self.args.dst)}"
+            cmd = f"mkdir {validate(self.args.dst)}"
             return cmd
         
         if not os.path.exists(self.args.dst):
             self.__exe__(__make_cmd_mkdir__(self.args.dst))
         
-        for item in self.itemlist:
+        for idx, item in enumerate(self.itemlist):
+            self.logger.info(f"Processing item[{idx+1}/{len(self.itemlist)}]: {item}...")
             if is_zip(item):
                 self.submerge_from_zip(item, self.args.dst)
             else:
@@ -95,15 +96,17 @@ class MergeUtility:
                 cmd += "cp -RpP -a " if _is_dir==True else "cp -a"
             else:
                 cmd += "mv "
-            cmd += validify(_from)
+            cmd += validate(_from)
             cmd += " "
-            cmd += validify(_to)
+            cmd += validate(_to)
             return cmd
         
         file_list = [f for f in os.listdir(src) if os.path.isfile(os.path.join(src,f))]
         dir_list  = [d for d in os.listdir(src) if not os.path.isfile(os.path.join(src,d))]
         trace_prefix = "="*trace_level+"=>"
-        self.logger.info(f"{trace_prefix} {file_list=} {dir_list=}")
+        
+        self.logger.info(f"{trace_prefix} Prepare looping files in the directory {src}:")
+        self.logger.info(f"{trace_prefix} {file_list=}")
         for f in file_list:
             src_file = os.path.join(src,f)
             if f in DEFAULT_IGNORED_FILE:
@@ -114,6 +117,8 @@ class MergeUtility:
                 continue
             self.__exe__(__make_cmd_merge__(src_file, dst, False))
 
+        self.logger.info(f"{trace_prefix} Prepare looping folders in the directory {src}:")
+        self.logger.info(f"{trace_prefix} {dir_list=}")
         for d in dir_list:
             src_dir = os.path.join(src,d)
             dst_dir = os.path.join(dst,d)
@@ -126,14 +131,14 @@ class MergeUtility:
     
     def submerge_from_zip(self, zip_path, dst):
         def __make_cmd_remove__(file):
-            cmd = f"rm -rf {validify(file)}"
+            cmd = f"rm -rf {validate(file)}"
             return cmd
         
         def __make_cmd_extractzip__(zip_path, _to):
             if not os.path.exists(_to):
-                cmd = f"mkdir {validify(_to)} && tar xzfC {validify(zip_path)} {validify(_to)}"
+                cmd = f"mkdir {validate(_to)} && tar xzfC {validate(zip_path)} {validate(_to)}"
             else:
-                cmd = f"tar xzfC {validify(zip_path)} {validify(_to)}"
+                cmd = f"tar xzfC {validate(zip_path)} {validate(_to)}"
             return cmd
 
         top_level = None
@@ -146,7 +151,7 @@ class MergeUtility:
         #   <os.system()> treated needs all space charactor with an escape indicator "\"
         #   However <zipfile.ZipFile()> won't recognize the escape indicator "\" 
         #########################################################################################
-        with zipfile.ZipFile(validify(zip_path).replace(r"\ ", " "), 'r') as zip_file:
+        with zipfile.ZipFile(validate(zip_path).replace(r"\ ", " "), 'r') as zip_file:
             # zip_file.extractall(dst) # BUG
             top_level = {item.split('/')[0] for item in zip_file.namelist()}
         
