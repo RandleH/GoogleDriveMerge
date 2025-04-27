@@ -6,12 +6,20 @@
     "configurations": [
     
         {
-            "name": "Python Debugger: Example",
+            "name": "Python Debugger: NormalFile",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
             "args": ["--dst", "dummy", "--logging", "debug", "${workspaceFolder}/example/dummy1", "${workspaceFolder}/example/dummy2", "${workspaceFolder}/example/dummy3"]
+        },
+        {
+            "name": "Python Debugger: ZipFile",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": ["--dst", "dummy", "--logging", "debug", "${workspaceFolder}/example/dummy1.zip", "${workspaceFolder}/example/dummy2.zip", "${workspaceFolder}/example/dummy3.zip"]
         }
     ]
 }
