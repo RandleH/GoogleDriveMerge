@@ -54,6 +54,18 @@ def query(msg):
 
 
 class MergeUtility:
+    class cmd:
+        def merge( _from:str, _to:str, _copy:bool, _is_dir:bool):
+            cmd = ""
+            if _copy==True:
+                cmd += "cp -RpP -a " if _is_dir==True else "cp -a"
+            else:
+                cmd += "mv "
+            cmd += validate(_from)
+            cmd += " "
+            cmd += validate(_to)
+            return cmd
+    
     def __init__(self, args):
         self.logger = PrettyLogger(self.__class__.__name__, level=logging.DEBUG if args.logging=="debug" else logging.INFO)
         self.args     = args
@@ -101,8 +113,12 @@ class MergeUtility:
             cmd += validate(_to)
             return cmd
         
+        # NOTE: 
+        #   In case this function was NOT called from an upper recursive level.
+        #   Double check if the source is a file.
         if os.path.isfile(src):
-            __make_cmd_merge__(src, dst, False)
+            self.__exe__(self.cmd.merge(src, dst, copy, False))
+            # self.__exe__(__make_cmd_merge__(src, dst, _is_dir=False))
             return
         
         file_list = [f for f in os.listdir(src) if os.path.isfile(os.path.join(src,f))]
@@ -160,7 +176,6 @@ class MergeUtility:
             top_level = {item.split('/')[0] for item in zip_file.namelist()}
         
         try:
-            
             tmp_path = os.path.join(dst, "__TEMP__")
             self.__exe__(__make_cmd_extractzip__(zip_path, tmp_path))
             
