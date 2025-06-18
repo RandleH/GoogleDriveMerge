@@ -1,3 +1,12 @@
+################################################################################################
+# File: merge.py
+#
+#
+# Author: Randle
+#
+# Copyright (c) 2024, Randle
+#
+################################################################################################
 
 import os
 import argparse
@@ -113,11 +122,16 @@ class MergeUtility:
             self.args.dst = self.args.dst.replace("comappleCloudDocs", "com~apple~CloudDocs")
 
     def __exe__(self, cmd):
-        self.logger.debug(f"${cmd} | Return: {os.system(cmd)}")
+        ret = os.system(cmd)
+        self.logger.debug(f"${cmd} | Return: {ret}")
         # self.logger.debug(f"${cmd} | Return: {0xFF}")
+        
+        if ret != 0:
+            self.logger.error(f"Aborted as operation returned a none zero value. {ret=}")
+            self.logger.error(f"${cmd}")
+            sys.exit(1)
 
     def merge(self):
-        
         if not os.path.exists(self.args.dst):
             self.__exe__(cmd.mkdir(self.args.dst))
         
