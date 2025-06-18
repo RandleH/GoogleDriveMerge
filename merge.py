@@ -101,6 +101,10 @@ class MergeUtility:
             cmd += validate(_to)
             return cmd
         
+        if os.path.isfile(src):
+            __make_cmd_merge__(src, dst, False)
+            return
+        
         file_list = [f for f in os.listdir(src) if os.path.isfile(os.path.join(src,f))]
         dir_list  = [d for d in os.listdir(src) if not os.path.isfile(os.path.join(src,d))]
         trace_prefix = "="*trace_level+"=>"
@@ -113,7 +117,7 @@ class MergeUtility:
                 continue
             
             if os.path.exists(os.path.join(dst,f)):
-                self.logger.warning(f"Can NOT merge duplicated file: {os.path.join(src,f)}")
+                self.logger.warning(f"Can NOT merge duplicated file: {src_file}")
                 continue
             self.__exe__(__make_cmd_merge__(src_file, dst, False))
 
@@ -156,15 +160,19 @@ class MergeUtility:
             top_level = {item.split('/')[0] for item in zip_file.namelist()}
         
         try:
-            self.__exe__(__make_cmd_extractzip__(zip_path, dst))
+            
+            tmp_path = os.path.join(dst, "__TEMP__")
+            self.__exe__(__make_cmd_extractzip__(zip_path, tmp_path))
             
             if len(top_level)!=1:
                 self.logger.warning(f"Top level in zip file is NOT unique. {top_level=}")
             
             for item in top_level:
-                src_item = os.path.join(dst,item)
+                src_item = os.path.join(tmp_path,item)
                 self.submerge( src_item, dst, False)
                 self.__exe__(__make_cmd_remove__(src_item))
+                
+            self.__exe__(__make_cmd_remove__(tmp_path))
             
             if self.args.no_keep == True:
                 if self.args.force == True or query(f"Remove the zip file {zip_path}?"):
