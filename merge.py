@@ -52,9 +52,7 @@ def query(msg):
         return False
 
 
-
-class MergeUtility:
-    class cmd:
+class cmd:
         def merge( _from:str, _to:str, _copy:bool, _is_dir:bool):
             cmd = ""
             if _copy==True:
@@ -65,6 +63,39 @@ class MergeUtility:
             cmd += " "
             cmd += validate(_to)
             return cmd
+        
+        def copy(_from:str, _to:str):
+            cmd = ""
+            cmd += "cp -RpP -a " if os.path.isfile(_from)==False else "cp -a"
+            cmd += validate(_from)
+            cmd += " "
+            cmd += validate(_to)
+            return cmd
+        
+        def move(_from:str, _to:str):
+            cmd = ""
+            cmd += "mv "
+            cmd += validate(_from)
+            cmd += " "
+            cmd += validate(_to)
+            return cmd
+        
+        def remove(file):
+            cmd = f"rm -rf {validate(file)}"
+            return cmd
+        
+        def mkdir(dir):
+            cmd = f"mkdir {validate(dir)}"
+            return cmd
+        
+        def xtzip(zip_path, _to):
+            if not os.path.exists(_to):
+                cmd = f"mkdir {validate(_to)} && tar xzfC {validate(zip_path)} {validate(_to)}"
+            else:
+                cmd = f"tar xzfC {validate(zip_path)} {validate(_to)}"
+            return cmd
+
+class MergeUtility:
     
     def __init__(self, args):
         self.logger = PrettyLogger(self.__class__.__name__, level=logging.DEBUG if args.logging=="debug" else logging.INFO)
@@ -86,12 +117,9 @@ class MergeUtility:
         # self.logger.debug(f"${cmd} | Return: {0xFF}")
 
     def merge(self):
-        def __make_cmd_mkdir__(dir):
-            cmd = f"mkdir {validate(self.args.dst)}"
-            return cmd
         
         if not os.path.exists(self.args.dst):
-            self.__exe__(__make_cmd_mkdir__(self.args.dst))
+            self.__exe__(cmd.mkdir(self.args.dst))
         
         for idx, item in enumerate(self.itemlist):
             self.logger.info(f"Processing item[{idx+1}/{len(self.itemlist)}]: {item}...")
@@ -100,25 +128,15 @@ class MergeUtility:
             else:
                 self.submerge( item, self.args.dst, self.args.no_keep==False)
 
-
     def submerge(self, src, dst, copy:bool, trace_level=0):
-        def __make_cmd_merge__(_from:str, _to:str, _is_dir:bool) -> str:
-            cmd = ""
-            if copy==True:
-                cmd += "cp -RpP -a " if _is_dir==True else "cp -a"
-            else:
-                cmd += "mv "
-            cmd += validate(_from)
-            cmd += " "
-            cmd += validate(_to)
-            return cmd
-        
+        idx = 1 if copy==True else 0
+        cmd_opt = [cmd.move, cmd.copy]
+
         # NOTE: 
         #   In case this function was NOT called from an upper recursive level.
         #   Double check if the source is a file.
         if os.path.isfile(src):
-            self.__exe__(self.cmd.merge(src, dst, copy, False))
-            # self.__exe__(__make_cmd_merge__(src, dst, _is_dir=False))
+            self.__exe__(cmd_opt[idx](src, dst))
             return
         
         file_list = [f for f in os.listdir(src) if os.path.isfile(os.path.join(src,f))]
@@ -135,7 +153,7 @@ class MergeUtility:
             if os.path.exists(os.path.join(dst,f)):
                 self.logger.warning(f"Can NOT merge duplicated file: {src_file}")
                 continue
-            self.__exe__(__make_cmd_merge__(src_file, dst, False))
+            self.__exe__(cmd_opt[idx](src_file, dst))
 
         self.logger.info(f"{trace_prefix} Prepare looping folders in the directory {src}:")
         self.logger.info(f"{trace_prefix} {dir_list=}")
@@ -145,22 +163,11 @@ class MergeUtility:
             if d in DEFAULT_IGNORED_FILE:
                 continue
             if not os.path.exists(dst_dir):
-                self.__exe__(__make_cmd_merge__(src_dir, dst_dir, True))
+                self.__exe__(cmd_opt[idx](src_dir, dst_dir))
             else:
                 self.submerge( src_dir, dst_dir, copy, trace_level+1)
     
     def submerge_from_zip(self, zip_path, dst):
-        def __make_cmd_remove__(file):
-            cmd = f"rm -rf {validate(file)}"
-            return cmd
-        
-        def __make_cmd_extractzip__(zip_path, _to):
-            if not os.path.exists(_to):
-                cmd = f"mkdir {validate(_to)} && tar xzfC {validate(zip_path)} {validate(_to)}"
-            else:
-                cmd = f"tar xzfC {validate(zip_path)} {validate(_to)}"
-            return cmd
-
         top_level = None
 
         #########################################################################################
@@ -172,12 +179,11 @@ class MergeUtility:
         #   However <zipfile.ZipFile()> won't recognize the escape indicator "\" 
         #########################################################################################
         with zipfile.ZipFile(validate(zip_path).replace(r"\ ", " "), 'r') as zip_file:
-            # zip_file.extractall(dst) # BUG
             top_level = {item.split('/')[0] for item in zip_file.namelist()}
         
         try:
             tmp_path = os.path.join(dst, "__TEMP__")
-            self.__exe__(__make_cmd_extractzip__(zip_path, tmp_path))
+            self.__exe__(cmd.xtzip(zip_path, tmp_path))
             
             if len(top_level)!=1:
                 self.logger.warning(f"Top level in zip file is NOT unique. {top_level=}")
@@ -185,17 +191,16 @@ class MergeUtility:
             for item in top_level:
                 src_item = os.path.join(tmp_path,item)
                 self.submerge( src_item, dst, False)
-                self.__exe__(__make_cmd_remove__(src_item))
+                self.__exe__(cmd.remove(src_item))
                 
-            self.__exe__(__make_cmd_remove__(tmp_path))
+            self.__exe__(cmd.remove(tmp_path))
             
             if self.args.no_keep == True:
                 if self.args.force == True or query(f"Remove the zip file {zip_path}?"):
-                    self.__exe__(__make_cmd_remove__(zip_path))
+                    self.__exe__(cmd.remove(zip_path))
             
         except Exception as e:
             self.logger.error(e)
-
 
 
     def submerge_from_tar(self, src, dst):
